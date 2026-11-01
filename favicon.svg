@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="42%" r="60%">
+      <stop offset="0" stop-color="#2a2f6e"/>
+      <stop offset="1" stop-color="#0c0e20"/>
+    </radialGradient>
+    <linearGradient id="gem" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e6fbff"/>
+      <stop offset="0.45" stop-color="#7fe3ff"/>
+      <stop offset="1" stop-color="#5a6cff"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#7fe3ff" stop-opacity="0.75"/>
+      <stop offset="1" stop-color="#7fe3ff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+  <circle cx="32" cy="27" r="20" fill="url(#glow)"/>
+  <!-- spire: tall faceted crystal -->
+  <path d="M32 5 L43 26 L32 47 L21 26 Z" fill="url(#gem)" stroke="#e8ecff" stroke-width="1.2" stroke-linejoin="round"/>
+  <path d="M32 5 L32 47 M21 26 L43 26" stroke="#ffffff" stroke-opacity="0.45" stroke-width="1"/>
+  <!-- golden plinth -->
+  <path d="M19 49 H45 L41 55 H23 Z" fill="#ffd96a" stroke="#8a6a1e" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M24 46 H40 L38 49 H26 Z" fill="#c9a440"/>
+  <!-- orbiting rune -->
+  <ellipse cx="32" cy="27" rx="18" ry="5" fill="none" stroke="#ffd96a" stroke-opacity="0.8" stroke-width="1.4" transform="rotate(-14 32 27)"/>
+</svg>
