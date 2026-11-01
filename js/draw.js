@@ -717,7 +717,7 @@
       ev.on('bossPhase', e => { this.focusOn(e.x, e.y, 1.05, 0.7); });
       ev.on('placed', t => { t.bornReal = this.time; });
     }
-    focusOn(x, y, zoom, dur) { this.focus = { x, y, zoom, t: dur }; }
+    focusOn(x, y, zoom, dur) { if (Number.isFinite(x) && Number.isFinite(y)) this.focus = { x, y, zoom, t: dur }; }
     // safe area: side columns host HUD panels; an open tower panel widens its side so it never covers the map
     sideTargets() {
       const side = this.cssW > 1000 ? U.clamp(this.cssW * 0.105, 128, this.hudSide || 168) : 0, wide = this.cssW > 1000 ? 352 : side;
@@ -878,6 +878,8 @@
         const k = 1 - Math.exp(-rdt * 10);
         c.x += (c.tx - c.x) * k; c.y += (c.ty - c.y) * k; c.zoom += (c.tz - c.zoom) * k;
       }
+      // self-heal: a bad value must never leave the camera (and every click) stuck at NaN
+      if (!Number.isFinite(c.x + c.y + c.zoom + c.tx + c.ty + c.tz)) { this.focus = null; c.tx = c.x = W / 2; c.ty = c.y = H / 2; c.tz = c.zoom = 1; }
       this.shake *= Math.exp(-rdt * 7); if (this.shake < 0.2) this.shake = 0;
       this.flash *= Math.exp(-rdt * 8); this.dmgFlash *= Math.exp(-rdt * 3.5); this.caPulse *= Math.exp(-rdt * 5);
       if (this.stasisFx) this.stasisFx = Math.max(0, this.stasisFx - rdt * 0.25);

@@ -64,5 +64,7 @@ test('boss phases advance with HP', () => { const g = mk(); g.wave = 14; g.nextW
 test('magmaw is healed (not hurt) by vent eruptions', () => { const g = mk({ mapId: 'cinder' }); const e = g.spawnEnemy({ type: 'magmaw', wave: 22, spawn: 0 }); const v = g.vents[0]; e.x = v.x; e.y = v.y; e.hp = e.maxHp * 0.5; const hp = e.hp; g.eruptVent(v, false); ok(e.hp > hp); });
 test('the field must be clear before the prep countdown starts', () => { const g = mk(); g.startWave(); while (g.spawnQueue.length) g.update(1 / 60); g.update(1 / 60); ok(g.awaitClear && g.countdown < 0); for (const e of g.enemies) g.damage(e, 1e9, 'true', null); g.update(1 / 60); g.update(1 / 60); ok(g.countdown > 0); });
 
+test('the boss event fires with the boss already on the map (camera focus needs a position)', () => { for (const type of ['nullwarden', 'magmaw']) { const g = mk({ mapId: type === 'magmaw' ? 'cinder' : 'verdant' }); let seen = null; g.ev.on('boss', e => { seen = [e.x, e.y]; }); g.spawnEnemy({ type, wave: 15, spawn: 0 }); ok(seen && Number.isFinite(seen[0]) && Number.isFinite(seen[1]), type + ' announced at ' + seen); } });
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

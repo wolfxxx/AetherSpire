@@ -408,7 +408,7 @@
         this.boss = e;
         if (this.map.id === 'neon' && !e.herald) { this.forceNight = true; this.ev.emit('banner', 'ETERNAL NIGHT', 'The Nullwarden swallows the light'); }
         if (e.type === 'magmaw') { e.armor = 0.5; e.cataT = 9; }
-        this.ev.emit('boss', e);
+        e.announce = true; // the 'boss' event fires once the boss has a position (see below)
         this.ev.emit('hitstop', 0.35); this.ev.emit('shake', 14);
       }
       if (q.mods && q.mods.includes('shielded')) { e.maxShield += e.maxHp * 0.25; e.shield = e.maxShield; }
@@ -431,6 +431,7 @@
       }
       this.enemies.push(e);
       const rec = this.waveRecords[w]; if (rec) rec.alive++;
+      if (e.announce) { delete e.announce; this.ev.emit('boss', e); }
       return e;
     }
     field(e) { return e.smart ? this.fieldSmart : this.fieldPlain; }
