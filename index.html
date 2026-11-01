@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aether Spire</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<canvas id="view"></canvas>
+<div id="cursor" class="pad-cursor hidden"></div>
+
+<!-- ======================= TITLE ======================= -->
+<section id="screen-title" class="screen">
+  <div class="title-wrap">
+    <div class="logo">
+      <div class="logo-sigil"></div>
+      <h1>AETHER<span>SPIRE</span></h1>
+      <div class="logo-sub">The Last Architect</div>
+    </div>
+    <nav class="title-menu">
+      <button class="btn big primary" data-act="campaign">Campaign</button>
+      <button class="btn big" data-act="daily">Daily Challenge <small id="daily-label"></small></button>
+      <button class="btn big" data-act="weekly">Weekly Gauntlet <small id="weekly-label"></small></button>
+      <button class="btn big" data-act="sanctum">Sanctum <small>Research · Armory · Codex</small></button>
+      <button class="btn big" data-act="settings">Settings</button>
+    </nav>
+    <div class="title-foot"><span class="shards-pill"><i class="ico-shard"></i><b id="title-shards">0</b> Aether Shards</span><span class="hint">Mouse + keyboard or gamepad · Press <kbd>F1</kbd> in battle for controls</span></div>
+  </div>
+</section>
+
+<!-- ======================= MAP SELECT ======================= -->
+<section id="screen-maps" class="screen hidden">
+  <header class="screen-head"><button class="btn ghost" data-act="back">‹ Back</button><h2>Campaign</h2><span class="shards-pill"><i class="ico-shard"></i><b class="shards-val">0</b></span></header>
+  <div class="maps-layout">
+    <div id="map-cards" class="map-cards"></div>
+    <aside id="map-detail" class="panel map-detail"></aside>
+  </div>
+</section>
+
+<!-- ======================= SANCTUM ======================= -->
+<section id="screen-sanctum" class="screen hidden">
+  <header class="screen-head"><button class="btn ghost" data-act="back">‹ Back</button><h2>Sanctum</h2>
+    <div class="tabs" id="sanctum-tabs"><button data-tab="research" class="on">Research</button><button data-tab="armory">Armory</button><button data-tab="codex">Codex</button><button data-tab="records">Records</button></div>
+    <span class="shards-pill"><i class="ico-shard"></i><b class="shards-val">0</b></span></header>
+  <div id="sanctum-body" class="sanctum-body"></div>
+</section>
+
+<!-- ======================= HUD ======================= -->
+<div id="hud" class="hidden">
+  <div id="topbar" class="topbar">
+    <div class="res-group">
+      <div class="res lives" data-tip="Nexus integrity. Enemies that reach the Nexus damage it."><i class="ico-nexus"></i><b id="h-lives">20</b><div class="lifebar"><div id="h-lifebar"></div></div></div>
+      <div class="res gold" data-tip="Gold — build and upgrade towers."><i class="ico-gold"></i><b id="h-gold">0</b></div>
+      <div class="res essence" data-tip="Essence — earned from perfect waves, elites and bosses. Spend on Mods and Powers."><i class="ico-essence"></i><b id="h-ess">0</b></div>
+    </div>
+    <div class="wave-group">
+      <div class="wave-label"><span>WAVE</span><b id="h-wave">0</b><em id="h-wavemax">/ 15</em></div>
+      <div id="h-mods" class="mod-chips"></div>
+      <button id="btn-wave" class="btn wave-btn"><span id="wave-btn-text">Start Wave</span><kbd>Space</kbd><div class="cd-fill" id="wave-cd"></div></button>
+    </div>
+    <div class="speed-group">
+      <span id="fps" class="score-mini hidden">60 fps</span>
+      <span class="score-mini">Score <b id="h-score">0</b></span>
+      <button class="btn sq" id="btn-pause" data-tip="Pause (P)">❚❚</button>
+      <button class="btn sq spd" data-speed="1">1×</button>
+      <button class="btn sq spd" data-speed="2">2×</button>
+      <button class="btn sq spd" data-speed="3">3×</button>
+      <button class="btn sq" id="btn-menu" data-tip="Menu (Esc)">☰</button>
+    </div>
+  </div>
+  <div id="bossbar" class="bossbar hidden"><div class="boss-name" id="boss-name">THE NULLWARDEN</div><div class="boss-track"><div class="boss-fill" id="boss-fill"></div><div class="boss-shield" id="boss-shield"></div><i style="left:33%"></i><i style="left:66%"></i></div><div class="boss-phase" id="boss-phase">Phase I</div></div>
+  <aside id="wavepanel" class="panel wavepanel">
+    <div class="wp-head">Incoming <span id="wp-title"></span></div>
+    <div id="wp-body"></div>
+    <div class="wp-foot" id="wp-foot"></div>
+  </aside>
+  <div id="buildbar" class="buildbar">
+    <div class="bb-meta" id="bb-meta"></div>
+    <div id="build-cards" class="build-cards"></div>
+    <div class="bb-sep"></div>
+    <div id="power-cards" class="power-cards"></div>
+  </div>
+  <aside id="towerpanel" class="panel towerpanel hidden"></aside>
+  <div id="banner" class="banner"><div class="b-main"></div><div class="b-sub"></div></div>
+  <div id="toast" class="toast"></div>
+  <div id="threat" class="threat-card hidden"></div>
+  <div id="tutorial" class="tutorial hidden"></div>
+</div>
+
+<div id="tooltip" class="tooltip hidden"></div>
+
+<!-- ======================= MODALS ======================= -->
+<div id="modal" class="modal hidden"><div class="modal-card panel" id="modal-card"></div></div>
+
+<div id="loading" class="loading"><div class="logo-sigil spin"></div><div>Weaving the Aether…</div></div>
+
+<script src="js/util.js"></script>
+<script src="js/data.js"></script>
+<script src="js/game.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/asset_manifest.js"></script>
+<script src="js/audio_manifest.js"></script>
+<script src="js/render.js"></script>
+<script src="js/draw.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

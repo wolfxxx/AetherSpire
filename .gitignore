@@ -1,0 +1,4 @@
+art/gen/
+__pycache__/
+*.pyc
+.claude/

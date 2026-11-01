@@ -1,0 +1,89 @@
+Modern Tower Defence Game Plan
+
+Working Title: Aether Spire (or Nexus Breach, Verdant Bastion, Chrono Rampart — pick one that fits the final art direction)1. High-Level VisionA premium, highly polished single-player (with optional asynchronous multiplayer) tower defence game that feels modern rather than retro. Think the visual fidelity and juice of Bloons TD 6 + Kingdom Rush mixed with the systemic depth of They Are Billions / Defense Grid 2 and the presentation quality of a mid-tier indie release like Dome Keeper or Against the Storm.Core fantasy: You are the last Arcane Architect defending the last living city against a multidimensional invasion. Every tower you place is a living construct of geometry, energy, and will.Pillars
+Gorgeous, readable, high-contrast visuals with heavy juice
+Meaningful decisions every wave (not just “spam the best tower”)
+Strong sense of progression and power fantasy without power creep destroying balance
+Short, satisfying sessions (12–25 minutes per map) with deeper roguelike/meta layers
+2. Core Gameplay Loop
+Choose / unlock a map + difficulty modifier
+Place starting towers and path blockers during the prep phase
+Waves begin. Enemies follow dynamic paths (or multiple lanes)
+Earn resources (Gold + Essence) from kills and objectives
+Continuously upgrade, sell, reposition (limited), and combo towers mid-wave
+Survive all waves / defeat the boss → score ranking + permanent progress
+Spend meta-currency on permanent upgrades, new towers, cosmetics, or new maps
+Key modern twists
+Active abilities on many towers (player input matters)
+Tower synergy tags (Fire + Nature = Burn + Root combos, etc.)
+Limited repositioning and “overclock” modes that temporarily boost a tower at a cost
+Environmental interactions (destroyable bridges, rising water, shifting platforms, day/night cycles that change enemy behaviour)
+3. Visual & Art Direction (Critical for “great looking”)Style target: Stylized high-fidelity. Not photoreal, not pure cartoon. Think Hades meets Ori and the Will of the Wisps meets modern League of Legends skin quality.
+Clean, readable silhouettes
+Strong colour coding by element / faction
+Heavy particle and lighting work (but never at the cost of readability)
+Dynamic camera with slight depth of field and subtle screen shake
+Every kill, upgrade, and ability has satisfying feedback (hit-stop, chromatic aberration flashes, screen particles)
+Art pillars
+Living architecture: towers breathe, pulse, grow crystalline structures
+Enemy variety is immediately readable by shape + colour + animation
+Maps feel like real places (floating islands, overgrown ruins, neon cyber-canyons, volcanic forges)
+Technical visual goals
+60 FPS locked on mid-range hardware
+High-quality post-processing (bloom, volumetric lighting, god rays, subtle film grain)
+Excellent UI that feels like part of the world (holographic, arcane, or sleek sci-fi depending on setting)
+4. Towers & SystemsTower categories (start with 8–10, expand to 18–22)
+Projectile (classic archers / railguns)
+Area / AoE (mortars, flame vents, storm generators)
+Support / Buff (speed aura, range amplifiers, resource generators)
+Debuff / Control (slow, root, armour shred, fear)
+Summoner / Minion (create temporary units)
+Hybrid / Special (laser chains, black holes, time dilation fields)
+Modern mechanics
+Evolution paths: Most towers have 2–3 distinct upgrade branches (e.g. Sniper → Precision Rail or Explosive Rounds)
+Synergy system: Towers gain bonuses when placed near specific other towers or elemental nodes
+Overclock / Sacrifice: Temporary massive power boost that risks damaging or destroying the tower
+Mod slots: Late-game towers accept 1–2 mods (extra damage type, chain chance, etc.)
+Resource system: Gold (primary) + Essence (premium currency earned from perfect waves, challenges, and meta). Essence is used for powerful temporary effects and permanent unlocks.5. Enemies & Wave Design
+Classic + modern enemy types: fast scouts, armoured brutes, flyers, swarmers, shield generators, teleporters, bosses with multiple phases
+Elite and Champion enemies that drop better loot / Essence
+Dynamic pathing: enemies can destroy weak barriers or take alternate routes if the main path is too heavily defended
+Wave modifiers (random or chosen): “Accelerated”, “Armoured Division”, “Aerial Assault”, “Boss Early”, etc.
+Bosses should feel like proper encounters — multiple phases, unique mechanics, and the ability to interact with the environment.6. Maps & Level Design
+8–12 core maps at launch, each with distinct biomes and mechanical identity
+Multiple lanes or branching paths on most maps
+Interactive elements: bridges that can be destroyed/rebuilt, power nodes that buff nearby towers, hazard zones
+Difficulty scaling via modifiers rather than just more HP (keeps the game fresh)
+Optional: Procedural map generation later as a roguelike mode.7. Progression & Meta LayerShort term: Tower upgrades, new towers, map stars (1–3), challenge medals
+
+Medium term: Permanent tech tree / research system (global bonuses)
+
+Long term: Cosmetics, tower skins, map themes, prestige system or endless modesInclude a strong “Daily / Weekly Challenge” system and an optional ranked leaderboard for score attack.8. UI / UX Goals
+Extremely clean and readable at a glance
+Minimal menu diving
+Excellent controller and mouse + keyboard support
+Smart placement previews with range and projected DPS
+Clear visual language for tower synergies and enemy threats
+Satisfying upgrade animations and number pops
+9. Audio Direction
+Punchy, high-quality SFX with lots of layered detail
+Adaptive music that intensifies with wave pressure
+Distinct audio signatures for every tower type and major enemy
+10. Technical & Scope RecommendationsEngine: Unreal Engine 5 or Unity (HDRP/URP) — both can deliver the visual target.
+
+Target platforms: PC first (Steam + Epic), then consoles. Mobile only if heavily simplified.MVP Scope (first playable)
+6 towers with full upgrade trees
+4 maps
+Solid wave system + 1 boss
+Basic progression and star system
+High visual polish on what exists
+Full Launch Target
+12–15 towers
+10+ maps
+Robust meta progression
+Challenge modes + leaderboards
+Full juice and presentation polish
+11. Monetization Options
+Premium priced ($19.99–$29.99) with cosmetic DLC later
+Or free-to-play with cosmetic battle pass + tower skins (avoid pay-to-win)
+This foundation gives you a game that feels modern, looks premium, and has real decision depth instead of pure optimisation. The biggest differentiator will be how good the juice, readability, and synergy systems feel in motion.Would you like me to expand any section into a full design document (towers list, enemy roster, first map design, tech tree, art style guide, etc.)?
