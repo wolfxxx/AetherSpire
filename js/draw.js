@@ -720,10 +720,22 @@
     focusOn(x, y, zoom, dur) { if (Number.isFinite(x) && Number.isFinite(y)) this.focus = { x, y, zoom, t: dur }; }
     // safe area: side columns host HUD panels; an open tower panel widens its side so it never covers the map
     sideTargets() {
-      const side = this.cssW > 1000 ? U.clamp(this.cssW * 0.105, 128, this.hudSide || 168) : 0, wide = this.cssW > 1000 ? 352 : side;
-      void wide;
       if (this.menuMode) return [0, 0];
+      if (this.hudL != null) return [this.hudL, this.hudR];
+      const side = this.cssW > 1000 ? U.clamp(this.cssW * 0.105, 128, this.hudSide || 168) : 0;
       return [side, side];
+    }
+    // phones lay the HUD out differently; the CSS is the source of truth for how much room it takes
+    readHud() {
+      const cs = getComputedStyle(document.body), v = k => parseFloat(cs.getPropertyValue(k));
+      const t = v('--hud-top'), b = v('--hud-bottom'), l = v('--hud-left'), r = v('--hud-right');
+      if (Number.isFinite(t)) this.hudTop = t;
+      if (Number.isFinite(b)) this.hudBottom = b;
+      // notches: env(safe-area-inset-*) only resolves to pixels on a real element, so measure a probe
+      if (!this._safe) { const d = document.createElement('div'); d.style.cssText = 'position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;pointer-events:none;padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)'; document.body.appendChild(d); this._safe = d; }
+      const ps = getComputedStyle(this._safe), sl = parseFloat(ps.paddingLeft) || 0, sr = parseFloat(ps.paddingRight) || 0;
+      this.hudL = Number.isFinite(l) ? l + sl : null; this.hudR = Number.isFinite(r) ? r + sr : null;
+      this.safeL = null;
     }
     get scale() {
       if (this.safeL == null) [this.safeL, this.safeR] = this.sideTargets();

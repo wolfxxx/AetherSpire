@@ -1,0 +1,30 @@
+{
+  "name": "Aether Spire",
+  "short_name": "Aether Spire",
+  "description": "Arcane tower defence: seven elemental towers, four painted maps, bosses and a research tree.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#05060f",
+  "theme_color": "#0c0e20",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

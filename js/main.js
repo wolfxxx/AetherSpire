@@ -132,6 +132,10 @@
       case 'sanctumFromResult': UI.closeModal(); App.endGame(); App.action('sanctum', {}); break;
       case 'nextmap': { UI.closeModal(); const i = D.MAPS.findIndex(m => m.id === App.lastOpts.mapId); App.startGame({ mapId: D.MAPS[i + 1].id, difficulty: App.lastOpts.difficulty, mutators: [] }); break; }
       case 'deselect': App.select(null); break;
+      case 'cancelmode': App.setMode(null); UI.hideTip(); break;
+      case 'wavestoggle': document.body.classList.toggle('show-waves'); break;
+      case 'portraitok': document.body.classList.add('portrait-ok'); App.layoutMode(); break;
+      case 'fullscreen': App.goFullscreen(); break;
       case 'panelmin': App.panelMin = App.save.panelMin = !App.panelMin; App.persist(); UI.panelKey = null; break;
       case 'upgrade': if (g && App.selected && App.selected.def) { if (g.upgrade(App.selected, +ds.branch || 0)) { UI.panelKey = null; App.tutEvent('upgrade'); } } break;
       case 'target': if (App.selected) { App.selected.targeting = ds.v; UI.panelKey = null; } break;
@@ -163,6 +167,7 @@
   // ============================================================ GAME LIFECYCLE
   App.startGame = function (opts) {
     Audio.init();
+    if (App.touch) App.goFullscreen();
     App.lastOpts = opts;
     if (App.game) App.game.over = true;
     App.demo = null;
@@ -174,6 +179,7 @@
     App.view.settings.numbers = App.save.settings.numbers;
     App.view.menuMode = false;
     App.view.cam.tz = 1;
+    App.fitPortrait();
     App.screen = 'game'; UI.showScreen('game'); UI.buildHUD(g); UI.hidePanel();
     Audio.music.setMood(g.map.biome); Audio.music.start();
     App.hookGame(g);
@@ -256,13 +262,50 @@
     UI.results(g, r);
   };
 
+  // ============================================================ PHONES & TABLETS
+  App.setTouch = function (on, quiet) {
+    if (App.touch === on) return;
+    App.touch = on; document.body.classList.toggle('touch', on);
+    if (!quiet) App.layoutMode();
+  };
+  // body.compact-hud: landscape phone — HUD moves into the side columns so the map gets the full height
+  // body.phone-portrait: narrow portrait screen — compact top/bottom bars + a rotate prompt in battle
+  App.layoutMode = function () {
+    const w = innerWidth, h = innerHeight, b = document.body.classList;
+    const small = Math.min(w, h) <= 560 || (App.touch && Math.max(w, h) <= 1100 && Math.min(w, h) <= 640);
+    b.toggle('compact-hud', small && w > h);
+    b.toggle('phone-portrait', small && w <= h);
+    b.toggle('portrait', h > w);
+    if (App.view) { App.view.readHud(); App.view.resize(); }
+    App.fitPortrait();
+    UI.panelKey = null;
+    if (App.game && App.selected) UI.refreshPanel(App.game);
+  };
+  App.fitPortrait = function () {
+    const v = App.view; if (!v || !App.game || v.menuMode) return;
+    const portrait = document.body.classList.contains('phone-portrait');
+    if (!portrait) { if (App._fitZoom) { v.cam.tz = 1; v.clampCam(); App._fitZoom = 0; } return; }
+    const availH = v.cssH - v.hudTop - v.hudBottom, mapH = 1088 * v.scale / v.pxScale;
+    const z = Math.max(1, Math.min(2.2, availH / mapH * 0.98));
+    App._fitZoom = z; v.cam.tz = z; v.cam.tx = v.cam.tx || 960; v.clampCam();
+  };
+  App.goFullscreen = function () {
+    const el = document.documentElement, fs = el.requestFullscreen || el.webkitRequestFullscreen;
+    if (!fs || document.fullscreenElement || document.webkitFullscreenElement) return;
+    try {
+      const p = fs.call(el, { navigationUI: 'hide' });
+      const lock = () => { try { const o = screen.orientation; if (o && o.lock) o.lock('landscape').catch(() => { }); } catch (e) { /* unsupported */ } };
+      if (p && p.then) p.then(lock).catch(() => { }); else lock();
+    } catch (e) { /* not allowed here */ }
+  };
+
   // ============================================================ SELECTION / MODES
   App.select = function (o) {
     App.selected = o; App.modPicker = false; UI.panelKey = null; UI.hideTip();
     if (!o) UI.hidePanel(); else { Audio.play('select'); UI.refreshPanel(App.game); }
   };
   App.setMode = function (m) {
-    App.mode = m;
+    App.mode = m; App.pending = null; if (UI.placingChip) UI.placingChip(m);
     document.body.classList.toggle('placing', !!m);
     App.updatePreview();
   };
@@ -306,7 +349,7 @@
         App.preview = { kind: 'tower', id: m.id, c, r, x: g.cx(c), y: g.cx(r), ok, info: App._pvInfo };
         if (App._pvInfo && g.inb(c, r)) {
           const info = App._pvInfo;
-          UI.tip(`<b>${D.TOWERS[m.id].name}</b> ${ok ? '' : '<span style="color:var(--red)">' + (g.canPlace(m.id, c, r).why) + '</span>'}<div class="tt-stats"><span>Projected DPS</span><span>${D.TOWERS[m.id].support ? 'Support' : Math.round(info.dps)}</span><span>Path tiles covered</span><span>${info.covered}</span>${info.onLey ? '<span>Ley Node</span><span style="color:#9fffcf">+25% dmg, +20% range</span>' : ''}${info.aura ? `<span>Conduit aura</span><span style="color:var(--pink)">+${Math.round(info.aura.s.auraDmg * 100)}% dmg</span>` : ''}${info.links.length ? `<span>Synergies</span><span style="color:#fff3b0">${[...new Set(info.links.map(l => l.syn.name))].join(', ')}</span>` : ''}</div>`);
+          UI.tip(`<b>${D.TOWERS[m.id].name}</b> ${App.touch && ok ? '<span style="color:var(--gold)">· tap again to build</span>' : ''}${ok ? '' : '<span style="color:var(--red)">' + (g.canPlace(m.id, c, r).why) + '</span>'}<div class="tt-stats"><span>Projected DPS</span><span>${D.TOWERS[m.id].support ? 'Support' : Math.round(info.dps)}</span><span>Path tiles covered</span><span>${info.covered}</span>${info.onLey ? '<span>Ley Node</span><span style="color:#9fffcf">+25% dmg, +20% range</span>' : ''}${info.aura ? `<span>Conduit aura</span><span style="color:var(--pink)">+${Math.round(info.aura.s.auraDmg * 100)}% dmg</span>` : ''}${info.links.length ? `<span>Synergies</span><span style="color:#fff3b0">${[...new Set(info.links.map(l => l.syn.name))].join(', ')}</span>` : ''}</div>`);
           UI.placeTip(App.mouse.x, App.mouse.y);
         }
       }
@@ -322,6 +365,11 @@
   };
   App.pickAt = function (wx, wy) {
     const g = App.game;
+    if (App.lastPointer === 'touch') { // fingers are fat: snap to the nearest tower within ~0.7 tiles
+      let bt = null, bd2 = (T * 0.72) ** 2;
+      for (const t of g.towers.concat(g.barricades)) { const d2 = U.dist2(wx, wy, t.x, t.y); if (d2 < bd2) { bd2 = d2; bt = t; } }
+      if (bt && !g.occ[g.idx(Math.floor(wx / T), Math.floor(wy / T))]) return bt;
+    }
     // enemies first (small, moving)
     let best = null, bd = 30 * 30;
     for (const e of g.enemies) { const d2 = U.dist2(wx, wy, e.x, e.y - (e.flying ? 26 : 0)); if (d2 < Math.max(bd, e.r * e.r * 1.6) && d2 < bd + e.r * e.r) { bd = d2; best = e; } }
@@ -338,13 +386,23 @@
     if (best) return { enemy: true, e: best, get dead() { return best.dead; } };
     return null;
   };
-  App.canvasClick = function (x, y, button, shift) {
+  App.canvasClick = function (x, y, button, shift, touch) {
     const g = App.game; if (!g || g.over) return;
     Audio.init();
     const [wx, wy] = App.view.screenToWorld(x, y);
     const c = Math.floor(wx / T), r = Math.floor(wy / T);
     const m = App.mode;
     if (button === 2) { if (m) App.setMode(null); else App.select(null); UI.hideTip(); return; }
+    if (m && touch) {
+      // no hover on touch: the first tap shows the ghost / reticle with its stats, a second tap on the same spot confirms
+      const tile = m.kind === 'build' || m.kind === 'relocate' || m.kind === 'rally';
+      const p = App.pending;
+      const same = p && p.mode === m && (tile ? p.c === c && p.r === r : Math.hypot(p.x - wx, p.y - wy) < T * 0.9);
+      if (!same) App.pending = { mode: m, c, r, x: wx, y: wy };
+      App.mouse.x = x; App.mouse.y = y; App.mouse.inside = true; App._pvKey = null; App.updatePreview();
+      if (!same) { Audio.play('hover'); return; }
+      App.pending = null;
+    }
     if (m) {
       if (m.kind === 'build') {
         const placed = g.place(m.id, c, r);
@@ -364,12 +422,7 @@
     const cv = $('#view');
     let drag = null;
     cv.addEventListener('contextmenu', e => e.preventDefault());
-    cv.addEventListener('mousedown', e => {
-      Audio.init();
-      if (e.button === 1 || e.button === 2) { drag = { x: e.clientX, y: e.clientY, moved: false, button: e.button }; e.preventDefault(); }
-      App.mouse.down = true;
-    });
-    window.addEventListener('mousemove', e => {
+    const onMouseMove = e => {
       App.mouse.x = e.clientX; App.mouse.y = e.clientY; App.mouse.inside = e.target === cv;
       if (App.pad.active) { App.pad.active = false; document.body.classList.remove('pad'); $('#cursor').classList.add('hidden'); }
       if (drag) { const dx = e.clientX - drag.x, dy = e.clientY - drag.y; if (Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true; if (drag.moved && App.view.game && App.game) { App.view.pan(dx, dy); drag.x = e.clientX; drag.y = e.clientY; } }
@@ -385,20 +438,64 @@
           else if (App.mouse.inside && !e.target.closest('[data-tip],[data-tipfn]')) UI.hideTip();
         } else if (!App.mode) UI.hideTip();
       }
+    };
+    // ---- touch: tap = click, one finger drags the camera, two fingers pinch-zoom
+    const touches = new Map(); let gesture = null;
+    const tdist = () => { const p = [...touches.values()]; return p.length < 2 ? 0 : Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y); };
+    const tmid = () => { const p = [...touches.values()]; return p.length < 2 ? p[0] : { x: (p[0].x + p[1].x) / 2, y: (p[0].y + p[1].y) / 2 }; };
+    cv.addEventListener('pointerdown', e => {
+      Audio.init();
+      if (e.pointerType === 'mouse') {
+        App.lastPointer = 'mouse';
+        if (e.button === 1 || e.button === 2) { drag = { x: e.clientX, y: e.clientY, moved: false, button: e.button }; e.preventDefault(); }
+        App.mouse.down = true; return;
+      }
+      App.lastPointer = 'touch'; App.setTouch(true);
+      e.preventDefault();
+      try { cv.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+      touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (touches.size === 1) gesture = { x0: e.clientX, y0: e.clientY, t0: performance.now(), moved: false, multi: false, d: 0, last: { x: e.clientX, y: e.clientY } };
+      else if (gesture) { gesture.multi = true; gesture.d = tdist(); gesture.last = tmid(); }
     });
-    window.addEventListener('mouseup', e => {
+    window.addEventListener('pointermove', e => {
+      if (e.pointerType === 'mouse') { onMouseMove(e); return; }
+      if (!touches.has(e.pointerId) || !gesture) return;
+      touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (Math.hypot(e.clientX - gesture.x0, e.clientY - gesture.y0) > 12) gesture.moved = true;
+      if (!App.game) return;
+      const m = tmid();
+      if (touches.size >= 2) {
+        const d = tdist();
+        if (gesture.d > 0 && d > 0) App.view.zoomAt(m.x, m.y, d / gesture.d);
+        gesture.d = d;
+      }
+      if (gesture.moved || touches.size >= 2) { App.view.pan(m.x - gesture.last.x, m.y - gesture.last.y); UI.hideTip(); }
+      gesture.last = m;
+    }, { passive: true });
+    const touchEnd = e => {
+      if (!touches.has(e.pointerId)) return;
+      touches.delete(e.pointerId);
+      if (touches.size) { if (gesture) { gesture.d = tdist(); gesture.last = tmid(); } return; }
+      const g2 = gesture; gesture = null;
+      if (e.type === 'pointerup' && g2 && !g2.moved && !g2.multi && performance.now() - g2.t0 < 650) App.canvasClick(e.clientX, e.clientY, 0, false, true);
+    };
+    window.addEventListener('pointerup', e => {
+      if (e.pointerType !== 'mouse') { touchEnd(e); return; }
       App.mouse.down = false;
       if (drag && drag.button === e.button) { const wasDrag = drag.moved; drag = null; if (wasDrag) return; if (e.button === 2 && e.target === cv) App.canvasClick(e.clientX, e.clientY, 2); return; }
       if (e.button === 0 && e.target === cv) App.canvasClick(e.clientX, e.clientY, 0, e.shiftKey);
     });
+    window.addEventListener('pointercancel', e => { if (e.pointerType !== 'mouse') touchEnd(e); });
     cv.addEventListener('wheel', e => { if (!App.game) return; e.preventDefault(); App.view.zoomAt(e.clientX, e.clientY, e.deltaY < 0 ? 1.12 : 1 / 1.12); }, { passive: false });
     cv.addEventListener('mouseleave', () => { App.mouse.inside = false; App.preview = null; });
-    window.addEventListener('resize', () => App.view.resize());
+    window.addEventListener('resize', () => App.layoutMode());
+    window.addEventListener('orientationchange', () => setTimeout(() => App.layoutMode(), 250));
+    document.addEventListener('visibilitychange', () => { if (document.hidden && App.game && !App.game.over && !App.paused) App.openPause(); });
     window.addEventListener('keydown', App.onKey);
     $('#btn-wave').onclick = () => { Audio.init(); App.callWave(); };
     $('#btn-pause').onclick = () => App.togglePause();
     $('#btn-menu').onclick = () => App.openPause();
-    document.querySelectorAll('.spd').forEach(b => b.onclick = () => { App.speed = +b.dataset.speed; App.paused = false; Audio.play('click'); });
+    document.querySelectorAll('.spd').forEach(b => b.onclick = () => { App.speed = document.body.matches('.compact-hud, .phone-portrait') && b.dataset.speed === '1' ? App.speed % 3 + 1 : +b.dataset.speed; App.paused = false; Audio.play('click'); });
     window.addEventListener('blur', () => { if (App.game && !App.game.over && !App.paused) App.openPause(); });
   };
   App.callWave = function () {
@@ -495,13 +592,13 @@
 
   // ============================================================ TUTORIAL
   const TUT = [
-    { id: 'place', text: 'Welcome, Architect. Pick a tower from the bar below (or press <kbd>1</kbd>) and click a tile beside the path. The preview shows range, covered path and projected DPS. Glowing <b style="color:#8fffb0">Ley Nodes</b> grant +25% damage and range.' },
-    { id: 'wave', text: 'The chevrons show the invaders\' route to your Nexus. When ready press <b>Start Wave</b> (<kbd>Space</kbd>). Check <b>Incoming</b> on the left to see what\'s coming.' },
-    { id: 'upgrade', text: 'Click a tower to open its panel. Upgrade it (<kbd>U</kbd>) — at Tier 3 you choose one of two specializations that change how it fights.' },
+    { id: 'place', text: 'Welcome, Architect. Pick a tower from the bar below (or press <kbd>1</kbd>) and click a tile beside the path. The preview shows range, covered path and projected DPS. Glowing <b style="color:#8fffb0">Ley Nodes</b> grant +25% damage and range.', touch: 'Welcome, Architect. Tap a tower in the bar, then tap a tile beside the path to preview it (range, covered path, DPS) and tap it <b>again</b> to build. Pinch to zoom, drag to look around. Glowing <b style="color:#8fffb0">Ley Nodes</b> grant +25% damage and range.' },
+    { id: 'wave', text: 'The chevrons show the invaders\' route to your Nexus. When ready press <b>Start Wave</b> (<kbd>Space</kbd>). Check <b>Incoming</b> on the left to see what\'s coming.', touch: 'The chevrons show the invaders\' route to your Nexus. When ready tap <b>Start Wave</b>. The <b>Incoming</b> strip on the left shows what\'s coming — tap it for details.' },
+    { id: 'upgrade', text: 'Click a tower to open its panel. Upgrade it (<kbd>U</kbd>) — at Tier 3 you choose one of two specializations that change how it fights.', touch: 'Tap a tower to open its panel and upgrade it — at Tier 3 you choose one of two specializations that change how it fights.' },
     { id: 'synergy', text: 'Towers of different elements built close together form <b style="color:#fff3b0">Synergies</b> (dashed links). Try a Frost Obelisk beside a Storm Coil for <b>Superconduct</b>, or Fire beside Nature for <b>Wildfire</b>.' },
-    { id: 'ability', text: '<b>Abilities win battles.</b> Every Tier 2+ tower has one — a glowing ring floats above it when ready. Select the tower and press <kbd>Q</kbd> (or the ✧ button) when a big group arrives. Try it now!' },
-    { id: 'overclock', text: '<b>Overclock</b> (<kbd>O</kbd>) gives a tower +80% speed and +40% damage for 8s. Each use adds Strain, which risks Burnout — save it for bosses and big waves. Overclock a tower now.' },
-    { id: 'done', text: 'Perfect waves (no leaks) earn <b style="color:#ff7ae0">Essence</b>. Spend it on <b>Powers</b> (<kbd>Z</kbd><kbd>X</kbd><kbd>C</kbd>) and tower <b>Mods</b>. Enemies avoid heavily defended branches — cover every route. Good luck!', btn: 'Begin' },
+    { id: 'ability', text: '<b>Abilities win battles.</b> Every Tier 2+ tower has one — a glowing ring floats above it when ready. Select the tower and press <kbd>Q</kbd> (or the ✧ button) when a big group arrives. Try it now!', touch: '<b>Abilities win battles.</b> Every Tier 2+ tower has one — a glowing ring floats above it when ready. Tap the tower, then the ✧ button when a big group arrives. Try it now!' },
+    { id: 'overclock', text: '<b>Overclock</b> (<kbd>O</kbd>) gives a tower +80% speed and +40% damage for 8s. Each use adds Strain, which risks Burnout — save it for bosses and big waves. Overclock a tower now.', touch: '<b>Overclock</b> (⚡ in the tower panel) gives a tower +80% speed and +40% damage for 8s. Each use adds Strain, which risks Burnout — save it for bosses and big waves. Overclock a tower now.' },
+    { id: 'done', text: 'Perfect waves (no leaks) earn <b style="color:#ff7ae0">Essence</b>. Spend it on <b>Powers</b> (<kbd>Z</kbd><kbd>X</kbd><kbd>C</kbd>) and tower <b>Mods</b>. Enemies avoid heavily defended branches — cover every route. Good luck!', touch: 'Perfect waves (no leaks) earn <b style="color:#ff7ae0">Essence</b>. Spend it on <b>Powers</b> (the pink cards) and tower <b>Mods</b>. Enemies avoid heavily defended branches — cover every route. Good luck!', btn: 'Begin' },
   ];
   App.tutStart = function () { App.tut = { i: 0, done: new Set() }; App.tutShow(); };
   App.tutShow = function () { const s = TUT[App.tut.i]; UI.tutorial(Object.assign({ n: App.tut.i + 1, total: TUT.length }, s)); };
@@ -608,8 +705,11 @@
   App.bootInner = function () {
     App.load();
     UI.init(App);
+    App.touch = false;
+    App.setTouch(!!(window.matchMedia && matchMedia('(pointer: coarse)').matches) || navigator.maxTouchPoints > 1 && !matchMedia('(pointer: fine)').matches, true);
     App.view = new AS.View($('#view'));
     App.view.hudTop = 64; App.view.hudBottom = 118; App.view.hudSide = 168;
+    App.layoutMode();
     App.applySettings();
     App.bindInput();
     (AS.R.Art ? AS.R.Art.load() : Promise.resolve()).then(() => {
@@ -618,8 +718,10 @@
       requestAnimationFrame(() => requestAnimationFrame(() => { $('#loading').classList.add('gone'); setTimeout(() => $('#loading').style.display = 'none', 700); }));
     });
     // first interaction starts audio + menu music
-    const startAudio = () => { Audio.init(); Audio.setVolumes(App.save.settings.master, App.save.settings.sfx, App.save.settings.music); Audio.music.setMood(App.game ? App.game.map.biome : 'menu'); Audio.music.start(); window.removeEventListener('pointerdown', startAudio); window.removeEventListener('keydown', startAudio); };
-    window.addEventListener('pointerdown', startAudio); window.addEventListener('keydown', startAudio);
+    const startAudio = () => { Audio.init(); Audio.setVolumes(App.save.settings.master, App.save.settings.sfx, App.save.settings.music); Audio.music.setMood(App.game ? App.game.map.biome : 'menu'); Audio.music.start(); for (const ev of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown']) window.removeEventListener(ev, startAudio); };
+    for (const ev of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown']) window.addEventListener(ev, startAudio);
+    // keep trying to resume a suspended context on later gestures (iOS suspends it when the app is backgrounded)
+    for (const ev of ['touchend', 'click']) window.addEventListener(ev, () => Audio.init(), { passive: true });
     requestAnimationFrame(t => { lastT = t; App.loop(t); });
     // debug/automation hook
     window.AetherSpire = App;

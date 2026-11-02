@@ -27,6 +27,7 @@ python -m http.server 8765
 | Juice | WebGL bloom, tilt-shift DoF, chromatic aberration pulses, film grain, vignette, hit-stop, screen shake, particles, damage numbers, dynamic camera |
 | Audio | 20 recorded-quality SFX (ElevenLabs) layered over procedural synth voices with pitch variation, per-enemy spawn/death signatures, limiter + ducking; 6 composed music tracks (one per biome, boss, menu) that follow battle intensity and crossfade into the boss theme, with a generative synth score as fallback |
 | UX | Range/DPS/coverage placement preview, wave preview, threat cards, tutorial, tooltips, mouse+keyboard and gamepad |
+| Phones & tablets | Touch controls (tap to preview, tap again to build; pinch to zoom, drag to pan), landscape side-column HUD that gives the map the full screen height, portrait mode with auto-zoom, fullscreen + installable (add to home screen) |
 
 \* unlocked through research.
 

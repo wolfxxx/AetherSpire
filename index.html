@@ -2,7 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Aether Spire">
+<link rel="manifest" href="manifest.webmanifest">
 <title>Aether Spire</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
@@ -32,7 +37,7 @@
       <button class="btn big" data-act="sanctum">Sanctum <small>Research · Armory · Codex</small></button>
       <button class="btn big" data-act="settings">Settings</button>
     </nav>
-    <div class="title-foot"><span class="shards-pill"><i class="ico-shard"></i><b id="title-shards">0</b> Aether Shards</span><span class="hint">Mouse + keyboard or gamepad · Press <kbd>F1</kbd> in battle for controls</span></div>
+    <div class="title-foot"><span class="shards-pill"><i class="ico-shard"></i><b id="title-shards">0</b> Aether Shards</span><span class="hint hint-desk">Mouse + keyboard or gamepad · Press <kbd>F1</kbd> in battle for controls</span><span class="hint hint-touch">Tap to build · pinch to zoom · drag to pan</span><button class="btn ghost hint-touch fs-btn" data-act="fullscreen">⛶ Fullscreen</button></div>
   </div>
 </section>
 
@@ -62,7 +67,7 @@
       <div class="res essence" data-tip="Essence — earned from perfect waves, elites and bosses. Spend on Mods and Powers."><i class="ico-essence"></i><b id="h-ess">0</b></div>
     </div>
     <div class="wave-group">
-      <div class="wave-label"><span>WAVE</span><b id="h-wave">0</b><em id="h-wavemax">/ 15</em></div>
+      <div class="wave-label" data-act="wavestoggle"><span>WAVE</span><b id="h-wave">0</b><em id="h-wavemax">/ 15</em></div>
       <div id="h-mods" class="mod-chips"></div>
       <button id="btn-wave" class="btn wave-btn"><span id="wave-btn-text">Start Wave</span><kbd>Space</kbd><div class="cd-fill" id="wave-cd"></div></button>
     </div>
@@ -78,7 +83,7 @@
   </div>
   <div id="bossbar" class="bossbar hidden"><div class="boss-name" id="boss-name">THE NULLWARDEN</div><div class="boss-track"><div class="boss-fill" id="boss-fill"></div><div class="boss-shield" id="boss-shield"></div><i style="left:33%"></i><i style="left:66%"></i></div><div class="boss-phase" id="boss-phase">Phase I</div></div>
   <aside id="wavepanel" class="panel wavepanel">
-    <div class="wp-head">Incoming <span id="wp-title"></span></div>
+    <div class="wp-head" data-act="wavestoggle">Incoming <span id="wp-title"></span></div>
     <div id="wp-body"></div>
     <div class="wp-foot" id="wp-foot"></div>
   </aside>
@@ -93,7 +98,9 @@
   <div id="toast" class="toast"></div>
   <div id="threat" class="threat-card hidden"></div>
   <div id="tutorial" class="tutorial hidden"></div>
+  <div id="placing" class="place-chip hidden"></div>
 </div>
+<div id="rotate" class="rotate"><div class="rot-phone"></div><b>Rotate your phone</b><p>Aether Spire plays best in landscape.</p><button class="btn ghost" data-act="portraitok">Play anyway</button></div>
 
 <div id="tooltip" class="tooltip hidden"></div>
 

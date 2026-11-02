@@ -32,13 +32,18 @@
       if (t.dataset.tipfn) UI.tip(App.tipFor(t.dataset.tipfn, t.dataset), e); else UI.tip(esc(t.dataset.tip), e);
       if (t.closest('.btn,.bcard,.pcard,.branch,.r-node,.map-card')) AS.Audio.play('hover');
     });
-    document.addEventListener('mouseout', e => { const t = e.target.closest('[data-tip],[data-tipfn]'); if (t && !t.contains(e.relatedTarget)) UI.hideTip(); });
+    document.addEventListener('mouseout', e => { if (App.touch) return; /* touch fires a fake mouseout after every tap; tips auto-hide instead */ const t = e.target.closest('[data-tip],[data-tipfn]'); if (t && !t.contains(e.relatedTarget)) UI.hideTip(); });
     document.addEventListener('mousemove', e => { if (!$('#tooltip').classList.contains('hidden')) UI.placeTip(e.clientX, e.clientY); });
     $('#sanctum-tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { AS.Audio.play('click'); UI.buildSanctum(b.dataset.tab); } });
   };
 
   // ------------------------------------------------------------ tooltip / toast / banner
-  UI.tip = function (html, e) { const t = $('#tooltip'); t.innerHTML = html; t.classList.remove('hidden'); if (e) UI.placeTip(e.clientX, e.clientY); };
+  UI.touchText = s => App && App.touch ? String(s).replace(/\bClick\b/g, 'Tap').replace(/\bclick\b/g, 'tap').replace(/\bclicking\b/g, 'tapping') : s;
+  let tipT = 0;
+  UI.tip = function (html, e) {
+    const t = $('#tooltip'); t.innerHTML = UI.touchText(html); t.classList.remove('hidden'); if (e) UI.placeTip(e.clientX, e.clientY);
+    clearTimeout(tipT); if (App && App.touch && !(App.mode && App.pending)) tipT = setTimeout(UI.hideTip, 3200); // no mouse-out on touch screens
+  };
   UI.placeTip = function (x, y) {
     const t = $('#tooltip'); const w = t.offsetWidth, h = t.offsetHeight;
     let px = x + 18, py = y + 18;
@@ -239,7 +244,8 @@
     if (btn.className !== cls) btn.className = cls;
     $('#wave-cd').style.width = game.countdown > 0 ? (100 * game.countdown / 15) + '%' : '0%';
     // speed
-    document.querySelectorAll('.spd').forEach(b => b.classList.toggle('on', +b.dataset.speed === App.speed && !App.paused));
+    const cmp = document.body.matches('.compact-hud, .phone-portrait');
+    document.querySelectorAll('.spd').forEach(b => { if (cmp && b.dataset.speed === '1') { const t = App.speed + '×'; if (b.textContent !== t) b.textContent = t; b.classList.toggle('on', !App.paused); } else { if (b.dataset.speed === '1' && b.textContent !== '1×') b.textContent = '1×'; b.classList.toggle('on', +b.dataset.speed === App.speed && !App.paused); } });
     $('#btn-pause').classList.toggle('on', App.paused);
     // wave mods
     const modsKey = (game.currentWaveDef && game.waveActive ? game.currentWaveDef.mods : []).join();
@@ -305,6 +311,15 @@
   };
 
   // ------------------------------------------------------------ tower / selection panel
+  // touch: a chip that says what you're placing, how to confirm, and lets you cancel (there is no right-click)
+  UI.placingChip = function (m) {
+    const el = $('#placing'); if (!el) return;
+    if (!m || !App.touch) { el.classList.add('hidden'); return; }
+    const name = m.kind === 'build' ? (m.id === 'barricade' ? 'Barricade' : D.TOWERS[m.id].name) : m.kind === 'power' ? D.POWERS[m.id].name : m.kind === 'ability' ? m.tower.def.ability.name : m.kind === 'relocate' ? 'Move tower' : 'Rally point';
+    const how = m.kind === 'build' || m.kind === 'relocate' || m.kind === 'rally' ? 'Tap a tile to preview · tap it again to confirm' : 'Tap to aim · tap again to fire';
+    el.innerHTML = `<b>${name}</b><span>${how}</span><button class="btn sq" data-act="cancelmode" aria-label="Cancel">✕</button>`;
+    el.classList.remove('hidden');
+  };
   UI.layoutCards = function () {
     const panel = $('#towerpanel'), tut = $('#tutorial'), thr = $('#threat');
     const right = !panel.classList.contains('hidden') && panel.classList.contains('left');
@@ -335,13 +350,13 @@
     const sy = App.view.worldToScreen(0, sel.enemy ? sel.e.y : sel.y)[1];
     const pt = (x, y) => App.view.worldToScreen(x, y);
     const keyPts = [[sx, sy, 10], [...pt(game.nexus.x, game.nexus.y), 3]].concat(game.spawns.map(s2 => [...pt(game.cx(s2.c), game.cx(s2.r)), 2]), game.bridges.filter(b => !b.night).map(b => [...pt(b.x, b.y), 2]), game.vents.map(v => [...pt(v.x, v.y), 1]));
-    const H = innerHeight, dockTop = H - 118 - 236;
-    const rects = { left: [0, 0, 360, H], right: [innerWidth - 360, 0, innerWidth, H], dock: [innerWidth / 2 - 330, dockTop, innerWidth / 2 + 330, H] };
+    const H = innerHeight, dockTop = H - 118 - 236, phone = document.body.classList.contains('compact-hud') || document.body.classList.contains('phone-portrait'), PW = phone ? 250 : 360;
+    const rects = { left: [0, 0, PW, H], right: [innerWidth - PW, 0, innerWidth, H], dock: phone ? [-1e5, -1e5, 1e5, 1e5] : [innerWidth / 2 - 330, dockTop, innerWidth / 2 + 330, H] };
     const cost = k => keyPts.reduce((s2, [px, py, w]) => s2 + (px >= rects[k][0] - 20 && px <= rects[k][2] + 20 && py >= rects[k][1] - 20 && py <= rects[k][3] ? w : 0), 0);
     let side = ['right', 'left', 'dock'].reduce((b, k) => cost(k) < cost(b) ? k : b, sx > innerWidth * 0.55 ? 'left' : 'right');
     const left = side === 'left';
     panel.classList.toggle('dock', side === 'dock');
-    panel.classList.toggle('compact', side === 'dock' || cost(side) >= 3);
+    panel.classList.toggle('compact', !phone && (side === 'dock' || cost(side) >= 3)); // phones: the panel scrolls, so keep every control
     panel.classList.toggle('min', !!App.panelMin); // shrink to the essentials when space is contested
     App.view.panelSide = left ? 'left' : 'right';
     if (panel.classList.contains('left') !== left) panel.classList.toggle('left', left);
@@ -500,6 +515,12 @@
       ['Space', 'Start / call wave early', 'RT', 'Start / call wave'], ['U / I', 'Upgrade / branch B', 'X', 'Upgrade'], ['Q', 'Tower ability', 'Y', 'Tower ability'], ['O', 'Overclock', 'LT', 'Overclock'],
       ['T', 'Cycle targeting', 'D-pad ↑↓', 'Cycle targeting'], ['S', 'Sell', 'View', 'Speed'], ['R', 'Relocate', 'R-stick', 'Pan camera'], ['Z X C', 'Powers', 'L-stick', 'Move cursor'], ['P / F', 'Pause / speed', 'Menu', 'Pause'],
       ['Wheel', 'Zoom', '', ''], ['Right-drag', 'Pan', '', ''], ['Shift + click', 'Keep building', '', ''], ['Tab', 'Cycle towers', '', '']];
+    if (App.touch) {
+      const tr = [['Tap a card', 'Choose a tower or power'], ['Tap a tile', 'Preview range, coverage and DPS'], ['Tap it again', 'Build / fire / confirm'], ['✕ on the chip', 'Cancel placing'],
+        ['Tap a tower', 'Open its panel: upgrade, ability, overclock, sell'], ['Pinch', 'Zoom'], ['Drag', 'Pan the camera'], ['Tap “Wave”', 'Show what is incoming'], ['1× button', 'Cycle game speed']];
+      UI.modal(`<h2>Touch Controls</h2><div class="controls-grid touch-grid">${tr.map(r => `<b>${r[0]}</b><span>${r[1]}</span>`).join('')}</div><div class="mbtns"><button class="btn primary" data-act="closemodal">Got it</button></div>`);
+      return;
+    }
     UI.modal(`<h2>Controls</h2><div class="controls-grid">${rows.map(r => `<kbd>${r[0]}</kbd><span>${r[1]}</span><span class="pg">${r[2]}</span><span>${r[3]}</span>`).join('')}</div><div class="mbtns"><button class="btn primary" data-act="closemodal">Got it</button></div>`);
   };
   UI.pause = function () {
@@ -530,7 +551,7 @@
   UI.tutorial = function (step) {
     const el = $('#tutorial');
     if (!step) { el.classList.add('hidden'); UI.layoutCards(); return; }
-    el.innerHTML = `<div class="tt-body"><div class="tt-k">ARCHITECT'S GUIDE · ${step.n}/${step.total}</div><p>${step.text}</p></div><div style="display:flex;flex-direction:column;gap:6px"><button class="btn" data-act="tutnext">${step.btn || 'Got it'}</button><button class="btn ghost" data-act="tutskip">Skip</button></div>`;
+    el.innerHTML = `<div class="tt-body"><div class="tt-k">ARCHITECT'S GUIDE · ${step.n}/${step.total}</div><p>${UI.touchText(App.touch && step.touch ? step.touch : step.text)}</p></div><div style="display:flex;flex-direction:column;gap:6px"><button class="btn" data-act="tutnext">${step.btn || 'Got it'}</button><button class="btn ghost" data-act="tutskip">Skip</button></div>`;
     el.classList.remove('hidden');
     UI.layoutCards();
   };

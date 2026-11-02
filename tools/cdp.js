@@ -6,6 +6,7 @@ const CHROME = process.env.CHROME || 'C:/Program Files/Google/Chrome/Application
 const PORT = 9333 + Math.floor(Math.random() * 500);
 const URL = process.env.URL || 'http://localhost:8765/index.html';
 const W = +(process.env.W || 1600), H = +(process.env.H || 900);
+const MOBILE = !!process.env.MOBILE, DSF = +(process.env.DSF || (MOBILE ? 3 : 1));
 
 async function main() {
   const steps = JSON.parse(fs.readFileSync(process.argv[2] === '-' ? 0 : process.argv[2], 'utf8'));
@@ -27,7 +28,8 @@ async function main() {
   };
   const send = (method, params) => new Promise(r => { const i = ++id; pending[i] = r; ws.send(JSON.stringify({ id: i, method, params: params || {} })); });
   await send('Runtime.enable'); await send('Page.enable');
-  await send('Emulation.setDeviceMetricsOverride', { width: W, height: H, deviceScaleFactor: 1, mobile: false });
+  await send('Emulation.setDeviceMetricsOverride', { width: W, height: H, deviceScaleFactor: DSF, mobile: MOBILE, screenOrientation: MOBILE ? { type: W > H ? 'landscapePrimary' : 'portraitPrimary', angle: W > H ? 90 : 0 } : undefined });
+  if (MOBILE) { await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 }); await send('Emulation.setEmitTouchEventsForMouse', { enabled: true, configuration: 'mobile' }); await send('Emulation.setUserAgentOverride', { userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1' }); }
   await send('Page.navigate', { url: URL });
   await new Promise(r => setTimeout(r, 1500));
   for (const s of steps) {
@@ -43,6 +45,9 @@ async function main() {
       const [x, y] = s.click;
       for (const type of ['mouseMoved', 'mousePressed', 'mouseReleased']) await send('Input.dispatchMouseEvent', { type, x, y, button: s.button || 'left', clickCount: 1 });
     }
+    if (s.tap) { const [x, y] = s.tap; await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] }); await new Promise(r => setTimeout(r, s.hold || 40)); await send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); }
+    if (s.swipe) { const [x0, y0, x1, y1] = s.swipe; await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: x0, y: y0 }] }); for (let k = 1; k <= 8; k++) { await send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x0 + (x1 - x0) * k / 8, y: y0 + (y1 - y0) * k / 8 }] }); await new Promise(r => setTimeout(r, 16)); } await send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); }
+    if (s.pinch) { const [cx, cy, d0, d1] = s.pinch; const pts = d => [{ x: cx - d / 2, y: cy, id: 0 }, { x: cx + d / 2, y: cy, id: 1 }]; await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: pts(d0) }); for (let k = 1; k <= 8; k++) { await send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: pts(d0 + (d1 - d0) * k / 8) }); await new Promise(r => setTimeout(r, 16)); } await send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); }
     if (s.move) await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: s.move[0], y: s.move[1] });
     if (s.key) { await send('Input.dispatchKeyEvent', { type: 'keyDown', key: s.key, code: s.code || s.key, text: s.text }); await send('Input.dispatchKeyEvent', { type: 'keyUp', key: s.key, code: s.code || s.key }); }
     if (s.shot) {
